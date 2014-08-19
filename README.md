@@ -1,14 +1,25 @@
+[![Build Status](https://travis-ci.org/chartjes/opencfp.svg?branch=master)](https://travis-ci.org/chartjes/opencfp)
 opencfp
 =======
 
 Repo for OpenCFP project, a PHP-based conference talk submission system
 
+Contributing
+------------
+
+We welcome and love contributions! To facilitate this we encourage you to create 
+a new personal branch after you fork this repo, for content and changes specific to your event. 
+However, anything you are willing to push back should be updated in the master branch. This will
+help keep the master branch generic for future event organizers. You would then be able to 
+merge master to your private branch and get updates when desired.
+
 Requirements
 ------------
 
+Please see the [composer.json](composer.json) file.
 You may need to install php5-intl extension for PHP. (on Ubuntu, not sure what it is called for other OS)
 Also, must have PHP 5.3.3+.
-
+Requires apache 2+ with mod_rewrite enabled and "AllowOverride all" directive in your <Directory> block.
 
 Installation
 ------------
@@ -31,35 +42,57 @@ NOTE: May need to download composer.phar first from http://getcomposer.org
 
 4. Create database along with user/password in MySQL for application to use.
 
-5. Rename the /config/config.ini.dist file to /config/config.ini.
+5. Rename the /config/config.development.ini.dist file to /config/config.development.ini.
 
     ```bash
-    $ mv /config/config.ini.dist /config/config.ini
+    $ mv /config/config.development.ini.dist /config/config.development.ini
+    $ mv /config/config.production.ini.dist /config/config.production.ini
     ```
+NOTE: Use development or production naming as appropriate.
 
-6. Customize /config/config.ini as needed for your environment and site settings.
+6. Customize /config/config.development.ini as needed for your environment and site settings.
 
-7. Populate MySQL database by using the mysql.sql script available in /schema folder.
+    NOTE: The enddate will be observed. The app now locks at 11:59pm on the given enddate.
 
-8. May need to edit directory permissions for some of the packages. (your mileage may vary)
+7. Alter the /classes/OpenCFP/Bootstrap.php file with the desired $environment. Lines 11 and 12.
 
-9. Customize templates and /web/assets/css/site.css to your hearts content.
+8. Populate MySQL database by using the mysql.sql script available in /schema folder.
 
-10. Enjoy!!!
+9. May need to edit directory permissions for some of the vendor packages. (your mileage may vary)
+
+    NOTE: We're looking at you ezyang htmlpurifier.
+
+10. Update directory permissions to allow for headshot upload.
+
+    /web/uploads - needs to be writable by the web server
+
+11. May need to alter the memory limit of your web server to allow image manipulation of headshots.
+
+    NOTE: This is largely dictated by the size of the images people upload. Typically 512M works.
+    If you find that 'speakers' table is not being populated, this may be why.
+
+12. Customize templates and /web/assets/css/site.css to your hearts content.
+
+13. Enjoy!!!
 
 
 Additional Admin Setup
 ----------------------
 
-There is also a script available in /tools directory (to be called via command line)
-To enable a user to become an Admin.  So from within the /tools directory:
+1. There is also a script available in /tools directory (to be called via command line) To enable a user to become an Admin.  So via CLI from within the /tools directory.
 
     ```bash
-    $ php create_admin_user.php update {email-address}
+    $ php create_admin_user.php --update {email-address}
     ```
-This will enable that user to navigate to /admin/talks through a link now visible on the Dashboard.
+This will enable specified user to navigate to /admin through a link now visible on the Dashboard.
 
 Testing
 -------
 
-More to come on this.
+There is a test suite that uses PHPUnit in the /tests directory. The recommended way to run the tests is:
+
+
+    $ cd tests
+    $ ../vendor/bin/phpunit
+
+[![Build Status](https://travis-ci.org/chartjes/opencfp.svg?branch=master)](https://travis-ci.org/chartjes/opencfp)

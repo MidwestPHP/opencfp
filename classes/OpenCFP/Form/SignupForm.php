@@ -15,7 +15,10 @@ class SignupForm extends Form
         'company',
         'twitter',
         'speaker_info',
-        'speaker_bio'
+        'speaker_bio',
+        'transportation',
+        'hotel',
+        'speaker_photo'
     );
 
     /**
@@ -27,7 +30,6 @@ class SignupForm extends Form
     public function validateAll($action = 'create')
     {
         $this->sanitize();
-        $valid_email = true;
         $valid_passwords = true;
 
         if ($action == 'create') {
@@ -39,6 +41,7 @@ class SignupForm extends Form
         $valid_last_name = $this->validateLastName();
         $valid_company = $this->validateCompany();
         $valid_twitter = $this->validateTwitter();
+        $valid_speaker_photo = $this->validateSpeakerPhoto();
         $valid_speaker_info = true;
         $valid_speaker_bio = true;
 
@@ -58,14 +61,44 @@ class SignupForm extends Form
             $valid_company &&
             $valid_twitter &&
             $valid_speaker_info &&
-            $valid_speaker_bio
+            $valid_speaker_bio &&
+            $valid_speaker_photo
         );
+    }
+
+    public function validateSpeakerPhoto()
+    {
+        $allowedMimeTypes = array(
+            'image/jpeg',
+            'image/jpg',
+            'image/png',
+        );
+
+        // Speaker Photo is not required, only validate if it exists
+        if (!isset($this->_taintedData['speaker_photo'])) {
+            return true;
+        }
+
+        // Check if uploaded file is greater than 5MB
+        if ($this->_taintedData['speaker_photo']->getClientSize() > (5 * 1048576)) {
+            $this->_addErrorMessage("Speaker photo can not be larger than 5MB");
+            return false;
+        }
+
+        // Check if photo is in the mime-type white list
+        if (!in_array($this->_taintedData['speaker_photo']->getMimeType(), $allowedMimeTypes)) {
+            $this->_addErrorMessage("Speaker photo must be a jpg or png");
+            return false;
+        }
+
+        return true;
     }
 
     /**
      * Method that applies validation rules to email
      *
-     * @param string $email
+     * @return bool
+     * @internal param string $email
      */
     public function validateEmail()
     {
@@ -176,18 +209,18 @@ class SignupForm extends Form
 
         return true;
     }
-    
+
     public function validateCompany()
     {
         // $company = $this->_cleanData['company'];
-        
+
         return true;
     }
-    
+
     public function validateTwitter()
     {
         // $twitter = $this->_cleanData['twitter'];
-        
+
         return true;
     }
 
@@ -255,86 +288,5 @@ class SignupForm extends Form
             $this->_cleanData['password2'] = $this->_taintedData['password2'];
         }
     }
-
-//    /**
-//     * Build activation email
-//     *
-//     * @param $activationCode string
-//     * @param $message Swift_Message
-//     * @param $twig Twig objecg
-//     */
-//    private function constructActivationMessage($activationCode, \Swift_Message $message, \Twig_Environment $twig)
-//    {
-//        $template = $twig->loadTemplate('activation_email.twig');
-//        $parameters = array(
-//            'name' => $this->_data['first_name'],
-//            'activationCode' => $activationCode,
-//            'method' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off')
-//                ? 'https' : 'http',
-//            'host' => !empty($_SERVER['HTTP_HOST'])
-//                ? $_SERVER['HTTP_HOST'] : 'localhost',
-//        );
-//
-//        $message->setTo(
-//            $this->_data['email'],
-//            $this->_data['first_name'] . ' ' . $this->_data['last_name']
-//        );
-//        $message->setFrom(
-//            $template->renderBlock('from', $parameters),
-//            $template->renderBlock('from_name', $parameters)
-//        );
-//        $message->setSubject($template->renderBlock('subject', $parameters));
-//        $message->setBody($template->renderBlock('body_text', $parameters));
-//        $message->addPart(
-//            $template->renderBlock('body_html', $parameters),
-//            'text/html'
-//        );
-//    }
-//
-//    /**
-//     * Send out activation email.  Returns # of emails sent which should be 1.
-//     *
-//     * @param $user \Cartalyst\Sentry\Users\Eloquent\User
-//     * @param $smtp array
-//     * @param $twig \Twig_Environment
-//     * @param null $transport \Swift_SmtpTransport
-//     * @param null $mailer \Swift_Mailer
-//     * @param null $message \Swift_Message
-//     * @return int
-//     */
-//    public function sendActivationMessage(
-//        \Cartalyst\Sentry\Users\Eloquent\User $user,
-//        $smtp,
-//        \Twig_Environment $twig,
-//        \Swift_SmtpTransport $transport = null,
-//        \Swift_Mailer $mailer = null,
-//        \Swift_Message $message = null
-//    )
-//    {
-//        if (!$transport) {
-//            $transport = new \Swift_SmtpTransport($smtp['smtp.host'], $smtp['smtp.port']);
-//        }
-//
-//        if (!empty($smtp['smtp.user'])) {
-//            $transport->setUsername($smtp['smtp.user'])
-//                      ->setPassword($smtp['smtp.password']);
-//        }
-//
-//        if (!empty($smtp['smtp.encryption'])) {
-//            $transport->setEncryption($smtp['smtp.encryption']);
-//        }
-//        if (!$mailer) {
-//            $mailer = new \Swift_Mailer($transport);
-//        }
-//        if (!$message) {
-//            $message = new \Swift_Message();
-//        }
-//        $this->constructActivationMessage(
-//            $user->getActivationCode(),
-//            $message,
-//            $twig
-//        );
-//        return $mailer->send($message);
-//    }
 
 }

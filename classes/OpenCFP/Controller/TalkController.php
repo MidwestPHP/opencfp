@@ -5,9 +5,22 @@ use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
 use OpenCFP\Form\TalkForm;
 use OpenCFP\Model\Talk;
+use OpenCFP\Config\ConfigINIFileLoader;
 
 class TalkController
 {
+    public function getFlash(Application $app)
+    {
+        $flash = $app['session']->get('flash');
+        $this->clearFlash($app);
+        return $flash;
+    }
+
+    public function clearFlash(Application $app)
+    {
+        $app['session']->set('flash', null);
+    }
+
     public function editAction(Request $req, Application $app)
     {
         if (!$app['sentry']->check()) {
@@ -29,8 +42,7 @@ class TalkController
             return $app->redirect($app['url'] . '/dashboard');
         }
 
-        $template_name = 'edit_talk.twig';
-        $template = $app['twig']->loadTemplate($template_name);
+        $template = $app['twig']->loadTemplate('talk/edit.twig');
         $data = array(
             'formAction' => '/talk/update',
             'id' => $talk_id,
@@ -58,8 +70,7 @@ class TalkController
 
         $user = $app['sentry']->getUser();
 
-        $template_name = 'create_talk.twig';
-        $template = $app['twig']->loadTemplate($template_name);
+        $template = $app['twig']->loadTemplate('talk/create.twig');
         $data = array(
             'formAction' => '/talk/create',
             'title' => $req->get('title'),
@@ -80,6 +91,7 @@ class TalkController
 
     public function processCreateAction(Request $req, Application $app)
     {
+        $error = 0;
         if (!$app['sentry']->check()) {
             return $app->redirect($app['url'] . '/login');
         }
@@ -102,7 +114,7 @@ class TalkController
         $form->sanitize();
 
         if (!$form->validateAll()) {
-            $template = $app['twig']->loadTemplate('create_talk.twig');
+            $error++;
             $data = array(
                 'formAction' => '/talk/create',
                 'title' => $req->get('title'),
@@ -116,10 +128,7 @@ class TalkController
                 'sponsor' => $req->get('sponsor'),
                 'buttonInfo' => 'Submit my talk!',
                 'user' => $user,
-                'error_message' => implode('<br>', $form->getErrorMessages())
             );
-
-            return $template->render($data);
         }
 
         $sanitized_data = $form->getCleanData();
@@ -138,22 +147,33 @@ class TalkController
         );
         $talk = new Talk($app['db']);
 
-        if (!$talk->create($data)) {
-            $template_name = 'create_talk.twig';
-            $template = $app['twig']->loadTemplate('create_talk.twig');
-            $data['formAction'] = '/talk/create';
-            $data['buttonInfo'] = 'Submit my talk!';
-            $data['error_message'] = "Unable to create a new record in our talks database, please try again";
+        $result = $talk->create($data);
+        if (!$result) {
+            $error++;
+            // Set Success Flash Message
+            $app['session']->set('flash', array(
+                'type' => 'error',
+                'short' => 'Error',
+                'ext' => "Unable to add the talk, please try again",
+            ));
+        }
 
+        // If any errors were found
+        if ($error > 0) {
+            $data['flash'] = $this->getFlash($app);
+            $template = $app['twig']->loadTemplate('talk/create.twig');
             return $template->render($data);
         }
 
         $app['session']->set('flash', array(
             'type' => 'success',
-            'short' => '',
-            'ext' => "Succesfully created a talk"
+            'short' => 'Success',
+            'ext' => "Succesfully added the talk"
         ));
 
+        // send email to speaker showing submission
+        $this->sendSubmitEmail($app, $user, $app['db']->lastInsertId());
+        
         return $app->redirect($app['url'] . '/dashboard');
     }
 
@@ -181,9 +201,9 @@ class TalkController
 
         $form = new TalkForm($request_data, $app['purifier']);
         $form->sanitize();
-        $valid = $form->validateAll();
+        $isValid = $form->validateAll();
 
-        if ($valid) {
+        if ($isValid) {
             $sanitized_data = $form->getCleanData();
             $data = array(
                 'id' => (int)$sanitized_data['id'],
@@ -202,15 +222,15 @@ class TalkController
             $talk->update($data);
             $app['session']->set('flash', array(
                 'type' => 'success',
-                'short' => 'Updated talk!'
+                'short' => 'Success',
+                'ext' => 'Successfully updated talk.',
             ));
 
             return $app->redirect($app['url'] . '/dashboard');
         }
 
-        if (!$valid) {
-            $template_name = 'edit_talk.twig';
-            $template = $app['twig']->loadTemplate($template_name);
+        if (!$isValid) {
+            $template = $app['twig']->loadTemplate('talk/edit.twig');
             $data = array(
                 'formAction' => '/talk/update',
                 'id' => $req->get('id'),
@@ -225,13 +245,18 @@ class TalkController
                 'sponsor' => $req->get('sponsor'),
                 'buttonInfo' => 'Update my talk!',
                 'user' => $user,
-                'error_message' => implode("<br>", $form->getErrorMessages())
             );
 
-            return $template->render($data);
+            $app['session']->set('flash', array(
+                'type' => 'error',
+                'short' => 'Error',
+                'ext' => implode("<br>", $form->getErrorMessages())
+            ));
         }
 
-        return $app->redirect($app['url'] . '/talk/edit/' . $req->get('id'));
+        $data['flash'] = $this->getFlash($app);
+
+        return $template->render($data);
     }
 
     public function deleteAction(Request $req, Application $app)
@@ -243,10 +268,64 @@ class TalkController
         $user = $app['sentry']->getUser();
         $talk = new Talk($app['db']);
 
-        if ($talk->delete($req->get('tid'), $req->get('user_id')) === true) {
+        if ($talk->delete($req->get('tid'), $user->getId()) === true) {
             return $app->json(array('delete' => 'ok'));
         }
 
         return $app->json(array('delete' => 'no'));
+    }
+
+    protected function sendSubmitEmail(Application $app, $user, $talk_id)
+    {
+        $talk = new Talk($app['db']);
+        $talk_info = $talk->findById($talk_id);
+        
+        // Create our Mailer object
+        $loader = new ConfigINIFileLoader(APP_DIR . '/config/config.' . APP_ENV . '.ini');
+        $config_data = $loader->load();
+        $transport = new \Swift_SmtpTransport(
+            $config_data['smtp']['host'],
+            $config_data['smtp']['port']
+        );
+
+        if (!empty($config_data['smtp']['user'])) {
+            $transport->setUsername($config_data['smtp']['user'])
+                      ->setPassword($config_data['smtp']['password']);
+        }
+
+        if (!empty($config_data['smtp']['encryption'])) {
+            $transport->setEncryption($config_data['smtp']['encryption']);
+        }
+
+        // Build our email that we will send
+        $template = $app['twig']->loadTemplate('emails/talk_submit.twig');
+        $parameters = array(
+            'email' => $config_data['application']['email'],
+            'title' => $config_data['application']['title'],
+            'talk' => $talk_info['title'],
+            'enddate' => $config_data['application']['enddate']
+        );
+
+        try {
+            $mailer = new \Swift_Mailer($transport);
+            $message = new \Swift_Message();
+
+            $message->setTo($user['email']);
+            $message->setFrom(
+                $template->renderBlock('from', $parameters),
+                $template->renderBlock('from_name', $parameters)
+            );
+
+            $message->setSubject($template->renderBlock('subject', $parameters));
+            $message->setBody($template->renderBlock('body_text', $parameters));
+            $message->addPart(
+                $template->renderBlock('body_html', $parameters),
+                'text/html'
+            );
+
+            return $mailer->send($message);
+        } catch (\Exception $e) {
+            echo $e;die();
+        }
     }
 }

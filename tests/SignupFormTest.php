@@ -312,7 +312,7 @@ class SignupFormTest extends \PHPUnit_Framework_TestCase
      * Test that speaker info is validated correctly
      *
      * @test
-     * @param string $speakerInfo
+     * @param string $speakerBio
      * @param boolean $expectedResponse
      * @dataProvider speakerTextProvider
      */
@@ -362,7 +362,7 @@ class SignupFormTest extends \PHPUnit_Framework_TestCase
     }
 
     /**
-     * Data provicer for dataGetsReturnedCorrectlySanitized
+     * Data provider for dataGetsReturnedCorrectlySanitized
      *
      * @return array
      */
