@@ -1,23 +1,17 @@
-/*--------||
-|| Colors ||
-||--------*/
-/*-------||
-|| Text  ||
-||-------*/
-/*---------||
-|| Layouts ||
-||---------*/
+@import 'partials/settings';
+
 body {
-  background: white;
+  background: $color-background-lightest;
   font-size: 1.6rem;
   padding: 40px 0;
 }
 
 a {
-  color: #1b75bb;
-}
-a:hover {
-  color: inherit;
+  color: $color-links-dark;
+
+  &:hover {
+    color: inherit;
+  }
 }
 
 .star-favorite {
@@ -47,18 +41,20 @@ a:hover {
 
 .tile-content {
   z-index: 20;
-}
-.tile-content > h2 {
-  font-size: 3.5em;
-  margin-top: 0;
-}
-.tile-content > .fa {
-  color: rgba(0, 0, 0, 0.1);
-  font-size: 5em;
-  position: absolute;
-  right: 0;
-  bottom: 0;
-  z-index: 10;
+
+  &>h2{
+    font-size: 3.5em;
+    margin-top: 0;
+  }
+
+  &>.fa {
+    color: rgba(0, 0, 0, 0.1);
+    font-size: 5em;
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: 10;
+  }
 }
 
 .tile-speakers {
@@ -82,23 +78,33 @@ a:hover {
 }
 
 .navbar-lsp {
-  background: rgba(245, 245, 245, 0.9);
-  border-bottom: 3px solid #b4b4b4;
-}
-.navbar-lsp .navbar-nav > li > a {
-  color: #1b75bb;
-}
-.navbar-lsp .navbar-nav > .active a,
-.navbar-lsp .navbar-nav > .active a:hover,
-.navbar-lsp .navbar-nav > .active a:focus {
-  background: #1b75bb;
-  color: #FFF;
-}
-.navbar-lsp .navbar-toggle {
-  background: #1b75bb;
-}
-.navbar-lsp .icon-bar {
-  background: #FFF;
+  background: $color-gray-lightest-transluscent;
+  border-bottom: 3px solid $color-gray-medium;
+
+  .navbar-nav {
+    &>li {
+      &>a {
+        color: $color-links-dark;
+      }
+    }
+
+    &>.active {
+      a,
+      a:hover,
+      a:focus {
+        background: $color-background-primary-dark;
+        color: #FFF;
+      }
+    }
+  }
+
+  .navbar-toggle {
+    background: $color-background-primary-dark;
+  }
+
+  .icon-bar {
+    background: #FFF;
+  }
 }
 
 .alert {
@@ -111,19 +117,22 @@ a:hover {
   margin: 0.75em 0;
   padding: 0.5em 0;
   position: relative;
+
   font-family: 'Open Sans Condensed', 'lucida grande', arial;
   font-weight: 700;
   text-transform: uppercase;
-}
-.headline::before {
-  background: #1b75bb;
-  display: block;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  height: 4px;
-  width: 60px;
-  content: "";
+
+  &::before {
+    background: $color-background-primary-dark;
+    display: block;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    height: 4px;
+    width: 60px;
+
+    content: "";
+  }
 }
 
 .intro--block {
@@ -133,14 +142,14 @@ a:hover {
 
 .intro-body {
   margin: 0;
-  color: #1d1d1d;
+  color: $color-text-dark;
   font: 4rem/1 'Sanchez', palatino, georgia;
   text-align: center;
   text-shadow: 1px 2px 0 rgba(0, 0, 0, 0.2);
 }
 
 .intro-highlight {
-  color: #1b75bb;
+  color: $color-background-primary-dark;
 }
 
 .home-page .module {
@@ -225,7 +234,7 @@ a:hover {
 .lsp-btn-primary {
   box-shadow: 3px 3px 0 rgba(0, 0, 0, 0.25);
   margin: 1rem 0;
-  background: #505050;
+  background: $color-gray-darkest;
   color: #FFF;
   font-family: 'Open Sans Condensed', 'lucida grande', arial;
   font-weight: 300;
@@ -236,21 +245,25 @@ a:hover {
   transition: all 0.25s ease-in-out;
 }
 
-.lsp-btn-primary:hover {
-  background: #6e6e6e;
-  color: #FFF;
-}
-.lsp-btn-primary:visited {
-  color: #FFF;
+.lsp-btn-primary {
+  &:hover {
+    background: $color-gray-dark;
+    color: #FFF;
+  }
+
+  &:visited {
+    color: #FFF;
+  }
 }
 
 /* Custom container */
 .container-narrow {
   margin: 0 auto;
   max-width: 700px;
-}
-.container-narrow > hr {
-  margin: 30px 0;
+
+  &>hr {
+    margin: 30px 0;
+  }
 }
 
 /* Supporting marketing content */
@@ -260,19 +273,22 @@ a:hover {
 
 /* Bootstrap overrides */
 .btn-success {
-  background-color: #1b75bb;
-  border-color: #1b75bb;
-}
-.btn-success:hover {
-  background-color: #1e83d1;
-  border-color: #1e83d1;
+  background-color: $color-background-primary-dark;
+  border-color: $color-background-primary-dark;
+
+  &:hover {
+    background-color: lighten($color-background-primary-dark, 5%);
+    border-color: lighten($color-background-primary-dark, 5%);
+  }
 }
 
 .btn-warning {
-  background-color: #00b0d8;
-  border-color: #00b0d8;
+  background-color: $color-background-primary-light;
+  border-color: $color-background-primary-light;
+
+  &:hover {
+    background-color: lighten($color-background-primary-light, 5%);
+    border-color: lighten($color-background-primary-light, 5%);
+  }
 }
-.btn-warning:hover {
-  background-color: #00c5f2;
-  border-color: #00c5f2;
-}
+
