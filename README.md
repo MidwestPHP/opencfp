@@ -1,4 +1,6 @@
 [![Build Status](https://travis-ci.org/chartjes/opencfp.svg?branch=master)](https://travis-ci.org/chartjes/opencfp)
+[![Code Climate](https://codeclimate.com/github/chartjes/opencfp/badges/gpa.svg)](https://codeclimate.com/github/chartjes/opencfp)
+[![Test Coverage](https://codeclimate.com/github/chartjes/opencfp/badges/coverage.svg)](https://codeclimate.com/github/chartjes/opencfp)
 opencfp
 =======
 
@@ -18,7 +20,7 @@ Requirements
 
 Please see the [composer.json](composer.json) file.
 You may need to install php5-intl extension for PHP. (on Ubuntu, not sure what it is called for other OS)
-Also, must have PHP 5.3.3+.
+Also, must have PHP 5.4+.
 Requires apache 2+ with mod_rewrite enabled and "AllowOverride all" directive in your <Directory> block.
 
 Installation
@@ -56,11 +58,16 @@ NOTE: Use development or production naming as appropriate.
 
 7. Alter the /classes/OpenCFP/Bootstrap.php file with the desired $environment. Lines 11 and 12.
 
-8. Populate MySQL database by using the mysql.sql script available in /schema folder.
+8. Populate MySQL database by using the `schema.sql` script available in '/migrations' folder.
+
+    ```bash
+    $ mysql -h HOST -u USER_NAME -p DATABASE_NAME < /migrations/schema.sql
+    ```
 
 9. May need to edit directory permissions for some of the vendor packages. (your mileage may vary)
 
-    NOTE: We're looking at you ezyang htmlpurifier.
+    NOTE: If you are enabling template / htmlpurifier caching, you should create a directory with appropriate file
+    permissions and configure accordingly in your `config.*.ini`.
 
 10. Update directory permissions to allow for headshot upload.
 
@@ -86,13 +93,24 @@ Additional Admin Setup
     ```
 This will enable specified user to navigate to /admin through a link now visible on the Dashboard.
 
+
+Migrations
+----------
+
+This project uses [Phinx](http://phinx.org) to handle migrations. Be sure to edit the phinx.yml file that is in the root directory for the project to match your own
+database settings.
+
+To run migrations, make sure you are in the root directory for the project and then execute the following:
+
+    ```bash
+    $ ./vendor/bin/phinx migrate
+    ```
+
+This will run through existing migrations in the /migrations directory, applying any that have not yet been done.
+
 Testing
 -------
 
 There is a test suite that uses PHPUnit in the /tests directory. The recommended way to run the tests is:
 
-
-    $ cd tests
-    $ ../vendor/bin/phpunit
-
-[![Build Status](https://travis-ci.org/chartjes/opencfp.svg?branch=master)](https://travis-ci.org/chartjes/opencfp)
+    $ ./vendor/bin/phpunit -c tests/phpunit.xml

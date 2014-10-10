@@ -16,6 +16,8 @@ composer.lock
 deployment.properties
 deployment.xml
 /scripts
+/web/uploads/*
+!/web/uploads/dummyphoto.jpg/scripts
 
 # Midwest PHP-specific ignores
 .sass-cache/

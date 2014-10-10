@@ -1,14 +1,13 @@
 <?php
 namespace OpenCFP\Controller\Admin;
 
+use OpenCFP\Model\Talk;
 use Silex\Application;
 use Symfony\Component\HttpFoundation\Request;
-use OpenCFP\Model\Speaker;
 use Pagerfanta\View\TwitterBootstrap3View;
 
 class SpeakersController
 {
-    
     public function getFlash(Application $app)
     {
         $flasg = $app['session']->get('flash');
@@ -21,7 +20,7 @@ class SpeakersController
     {
         $app['session']->set('flash', null);
     }
-    
+
     protected function userHasAccess($app)
     {
         if (!$app['sentry']->check()) {
@@ -44,8 +43,11 @@ class SpeakersController
             return $app->redirect($app['url'] . '/dashboard');
         }
 
-        $speakerModel = new Speaker($app['db']);
-        $rawSpeakers = $speakerModel->getAll();
+        $rawSpeakers = $app['spot']
+            ->mapper('\OpenCFP\Entity\User')
+            ->all()
+            ->order(['last_name' => 'ASC'])
+            ->toArray();
 
         // Set up our page stuff
         $adapter = new \Pagerfanta\Adapter\ArrayAdapter($rawSpeakers);
@@ -88,15 +90,19 @@ class SpeakersController
             return $app->redirect($app['url'] . '/dashboard');
         }
 
+        // Get info about the speaker
+        $user_mapper = $app['spot']->mapper('OpenCFP\Entity\User');
+        $speaker_details = $user_mapper->get($req->get('id'))->toArray();
+
         // Get info about the talks
-        $userId = $req->get('id');
-        $speakerModel = new Speaker($app['db']);
-        $speaker = $speakerModel->getDetailsByUserId($userId);
+        $talk_mapper = $app['spot']->mapper('OpenCFP\Entity\Talk');
+        $talks = $talk_mapper->getByUser($req->get('id'))->toArray();
 
         // Build and render the template
         $template = $app['twig']->loadTemplate('admin/speaker/view.twig');
         $templateData = array(
-            'speaker' => $speaker,
+            'speaker' => $speaker_details,
+            'talks' => $talks,
             'photo_path' => $app['uploadPath'],
             'page' => $req->get('page'),
         );
@@ -110,9 +116,9 @@ class SpeakersController
             return $app->redirect($app['url'] . '/dashboard');
         }
 
-        $userId = $req->get('id');
-        $speakerModel = new Speaker($app['db']);
-        $response = $speakerModel->delete($userId);
+        $mapper = $app['spot']->mapper('OpenCFP\Entity\User');
+        $speaker = $mapper->get($req->get('id'));
+        $response = $mapper->delete($speaker);
 
         $ext = "Succesfully deleted the requested user";
         $type = 'success';
@@ -131,7 +137,7 @@ class SpeakersController
             'ext' => $ext
         ));
 
-        return $app->redirect($all['url'] . '/admin/speakers');
+        return $app->redirect($app['url'] . '/admin/speakers');
     }
 
 }
