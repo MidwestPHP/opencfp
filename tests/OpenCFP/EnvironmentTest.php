@@ -3,7 +3,7 @@
 /**
  * @covers OpenCFP\Environment
  */
-class EnvironmentTest extends \PHPUnit_Framework_TestCase 
+class EnvironmentTest extends \PHPUnit_Framework_TestCase
 {
     /** @test */
     public function it_should_encapsulate_valid_environments()
@@ -27,5 +27,12 @@ class EnvironmentTest extends \PHPUnit_Framework_TestCase
     {
         $this->assertEquals('testing', Environment::fromString('testing'));
     }
+
+    /** @test */
+    public function it_fails_when_given_an_invalid_environment_string()
+    {
+        $this->setExpectedException('InvalidArgumentException');
+
+        Environment::fromString('foo');
+    }
 }
- 

@@ -12,10 +12,10 @@ opencfp.iml
 .project
 .settings
 composer.phar
-composer.lock
 deployment.properties
 deployment.xml
 /scripts
 /web/uploads/*
 !/web/uploads/dummyphoto.jpg
 phinx.yml
+/phpunit.xml

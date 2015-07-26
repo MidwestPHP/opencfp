@@ -1,7 +1,6 @@
 <?php
 use Mockery as m;
 use OpenCFP\Application;
-use OpenCFP\Environment;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\HttpFoundation\Session\Storage\MockFileSessionStorage;
 
@@ -69,7 +68,9 @@ class SignupControllerTest extends PHPUnit_Framework_TestCase
         $app->shouldReceive('offsetGet')->with('spot')->andReturn($spot);
 
         // Create an instance of the controller and we're all set
-        $controller = new \OpenCFP\Http\Controller\SignupController($app);
+        $controller = new \OpenCFP\Http\Controller\SignupController();
+        $controller->setApplication($app);
+
         $req = m::mock('Symfony\Component\HttpFoundation\Request');
 
 

@@ -49,12 +49,14 @@ class DashboardControllerTest extends PHPUnit_Framework_TestCase
 
         ob_start();
         $app->run();  // Fire before handlers... boot...
-        ob_clean();
+        ob_end_clean();
 
         // Instantiate the controller and run the indexAction
-        $controller = new \OpenCFP\Http\Controller\DashboardController($app);
+        $controller = new \OpenCFP\Http\Controller\DashboardController();
+        $controller->setApplication($app);
+
         $response = $controller->showSpeakerProfile();
-        $this->assertContains('Test Title', (string)$response);
-        $this->assertContains('Test User', (string)$response);
+        $this->assertContains('Test Title', (string) $response);
+        $this->assertContains('Test User', (string) $response);
     }
 }

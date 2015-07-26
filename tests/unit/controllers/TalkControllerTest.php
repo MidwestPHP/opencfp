@@ -9,9 +9,12 @@ class TalkControllerTest extends PHPUnit_Framework_TestCase
     protected $app;
     protected $req;
 
-    public function setup()
+    protected function setup()
     {
         $this->app = new Application(BASE_PATH, Environment::testing());
+        ob_start();
+        $this->app->run();
+        ob_end_clean();
 
         // Override things so that Spot2 is using in-memory tables
         $cfg = new \Spot\Config;
@@ -51,7 +54,8 @@ class TalkControllerTest extends PHPUnit_Framework_TestCase
      */
     public function ampersandsAcceptableCharacterForTalks()
     {
-        $controller = new OpenCFP\Http\Controller\TalkController($this->app);
+        $controller = new OpenCFP\Http\Controller\TalkController();
+        $controller->setApplication($this->app);
 
         // Create a test double for SwiftMailer
         $swiftmailer = m::mock('StdClass');
@@ -78,7 +82,8 @@ class TalkControllerTest extends PHPUnit_Framework_TestCase
          * If the talk was successfully created, a success value is placed
          * into the session flash area for display
          */
-        $create_response = $controller->processCreateAction($this->req, $this->app);
+        $create_response = $controller->processCreateAction($this->req);
+
         $create_flash = $this->app['session']->get('flash');
         $this->assertEquals($create_flash['type'], 'success');
 
@@ -97,7 +102,7 @@ class TalkControllerTest extends PHPUnit_Framework_TestCase
      * Method for setting the values that would be posted to a controller
      * action
      *
-     * @param mixed $data
+     * @param  mixed $data
      * @return void
      */
     protected function setPost($data)
