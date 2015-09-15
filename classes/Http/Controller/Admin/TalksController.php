@@ -68,7 +68,7 @@ class TalksController extends BaseController
 
     public function viewAction(Request $req)
     {
-        if (!$this->userHasAccess($this->app)) {
+        if (!$this->userHasAccess()) {
             return $this->redirectTo('login');
         }
 
@@ -82,7 +82,8 @@ class TalksController extends BaseController
 
         // Get info about our speaker
         $user_mapper = $this->app['spot']->mapper('OpenCFP\Domain\Entity\User');
-        $speaker = $user_mapper->get($talk->user_id)->toArray();;
+        $speaker = $user_mapper->get($talk->user_id)->toArray();
+        ;
 
         // Grab all the other talks and filter out the one we have
         $otherTalks = array_filter($all_talks, function ($talk) use ($talk_id) {
@@ -111,7 +112,7 @@ class TalksController extends BaseController
      */
     private function favoriteAction(Request $req)
     {
-        if (!$this->userHasAccess($this->app)) {
+        if (!$this->userHasAccess()) {
             return false;
         }
 
@@ -158,7 +159,7 @@ class TalksController extends BaseController
      */
     private function selectAction(Request $req)
     {
-        if (!$this->userHasAccess($this->app)) {
+        if (!$this->userHasAccess()) {
             return false;
         }
 

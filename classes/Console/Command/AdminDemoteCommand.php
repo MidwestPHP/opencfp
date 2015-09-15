@@ -7,7 +7,6 @@ use Cartalyst\Sentry\Users\UserNotFoundException;
 use OpenCFP\Console\BaseCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
-use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
 
 class AdminDemoteCommand extends BaseCommand
@@ -53,7 +52,7 @@ EOF
             $user = $sentry->getUserProvider()->findByLogin($email);
             $output->writeln('  Found account...');
 
-            if ( ! $user->hasAccess('admin')) {
+            if (! $user->hasAccess('admin')) {
                 $output->writeln(sprintf('The account <info>%s</info> is not in the Admin group', $email));
                 exit(1);
             }

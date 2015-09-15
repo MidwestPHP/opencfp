@@ -142,7 +142,7 @@ class Application extends SilexApplication
             new TomlConfigDriver(),
         ]), 'config'));
 
-        if ( ! $this->isProduction()) {
+        if (! $this->isProduction()) {
             $this['debug'] = true;
         }
     }
@@ -159,7 +159,7 @@ class Application extends SilexApplication
         $cursor = $this['config'];
 
         foreach (explode('.', $path) as $part) {
-            if ( ! isset($cursor[$part])) {
+            if (! isset($cursor[$part])) {
                 return null;
             }
 
@@ -293,13 +293,13 @@ class Application extends SilexApplication
             }
 
             switch ($code) {
-                case 401:
+                case Response::HTTP_UNAUTHORIZED:
                     $message = $app['twig']->render('error/401.twig');
                     break;
-                case 403:
+                case Response::HTTP_FORBIDDEN:
                     $message = $app['twig']->render('error/403.twig');
                     break;
-                case 404:
+                case Response::HTTP_NOT_FOUND:
                     $message = $app['twig']->render('error/404.twig');
                     break;
                 default:

@@ -8,7 +8,6 @@ use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 
 class ApiController
 {
-
     use ContainerAware;
 
     protected $statusCode = Response::HTTP_OK;
@@ -132,7 +131,7 @@ class ApiController
      *
      * @return RedirectResponse
      */
-    public function redirectTo($route, $status = 302)
+    public function redirectTo($route, $status = Response::HTTP_FOUND)
     {
         return $this->app->redirect($this->url($route), $status);
     }
