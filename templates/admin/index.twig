@@ -41,9 +41,12 @@
     </div>
 
     <h2>Recent Talks</h2>
+    <div class="table-responsive">
     {% include "admin/talks/_table.twig" %}
+    </div>
 {% endblock %}
 {% block scripts %}
     {{ parent() }}
+    <script src="/assets/js/admin/querystring.js"></script>
     <script src="/assets/js/admin/talk.js"></script>
 {% endblock %}
