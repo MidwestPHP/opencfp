@@ -21,6 +21,11 @@ environments:
     testing:
         adapter: mysql
         host: localhost
-        name: cfp_travis
+        name: cfp_test
         user: root
         pass: ''
+
+    memory:
+        adapter: sqlite
+        name: cfp
+        memory: true

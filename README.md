@@ -15,9 +15,10 @@ OpenCFP is a PHP-based conference talk submission system.
  * [Requirements](#requirements)
  * [Installation](#installation)
    * [Cloning the Repository](#cloning-the-repository)
-   * [Installing Composer Dependencies](#installing-composer-dependencies)
-   * [Create a Database](#create-a-database)
    * [Specify Environment](#specify-environment)
+   * [Installing Composer Dependencies](#installing-composer-dependencies)
+   * [PHP Built-in Web Server](#php-built-in-web-server)
+   * [Create a Database](#create-a-database)
    * [Configure Environment](#configure-environment)
    * [Run Migrations](#run-migrations)
    * [Final Touches](#final-touches)
@@ -29,9 +30,8 @@ OpenCFP is a PHP-based conference talk submission system.
  * [Command-line Utilities](#command-line-utilities)
    * [Admin Group Management](#admin-group-management)
    * [Clear Caches](#clear-caches)
+   * [Scripts to Rule Them All](#scripts-rule-all)
  * [Testing](#testing)
- * [Developer Environment](#developer-environment)
-   * [PHP Built-in Web Server](#php-built-in-web-server)
  * [Troubleshooting](#troubleshooting)
 
 <a name="features" />
@@ -75,7 +75,7 @@ Here are some issues that we would love to see contributions for:
 ## Requirements
 
  * PHP 5.5+
- * Apache 2+ with `mod_rewrite` enabled and an `AllowOverride all` directive in your `<Directory>` block.
+ * Apache 2+ with `mod_rewrite` enabled and an `AllowOverride all` directive in your `<Directory>` block is the recommended web server
  * Composer requirements are listed in [composer.json](composer.json).
  * You may need to install `php5-intl` extension for PHP. (`php-intl` on CentOS/RHEL-based distributions)
 
@@ -99,14 +99,49 @@ Resolving deltas: 100% (2314/2314), done.
 Checking connectivity... done.
 ```
 
+<a name="specify-environment" />
+### Specify Environment
+
+OpenCFP can be configured to run in multiple environments. The application environment (`CFP_ENV`) must be specified
+as an environment variable. If not specified, the default is `development`.
+
+An example Apache configuration is provided at `/web/htaccess.dist`. Copy this file to `/web/.htaccess` or otherwise
+configure your web server in the same way and change the `CFP_ENV` value to specify a different environment. The
+default has been pre-set for development.
+
+```
+SetEnv CFP_ENV production
+```
+
+You will also need to set the `CFP_ENV` variable in the shell you are using when doing an install. Here are some
+ways to do that with common shells assuming we're using `production`:
+
+* bash: `export CFP_ENV=production`
+* zsh:  `export CFP_ENV = production`
+* fish: `set -x CFP_ENV production`
+
+Again, just use your preferred environment in place of `production` if required. 
+
 <a name="installing-composer-dependencies" />
 ### Installing Composer Dependencies
 
 From the project directory, run the following command. You may need to download `composer.phar` first from http://getcomposer.org
 
 ```bash
-$ php composer.phar install
+$ script/setup
 ```
+
+<a name="php-built-in-web-server" />
+### PHP Built-in Web Server
+
+To run OpenCFP using [PHP's built-in web server](http://php.net/manual/en/features.commandline.webserver.php) the
+following command can be run:
+
+```
+$ script/server
+```
+
+The server uses port `8000`. This is a quick way to get started doing development on OpenCFP itself.
 
 <a name="specify-web-server-document-root" />
 ### Specify Web Server Document Root
@@ -124,6 +159,40 @@ Apache 2+ Example:
 </VirtualHost>
 ```
 
+nginx Example:
+
+```
+server{
+	server_name cfp.sitename.com;
+	root /var/www/opencfp/web;
+	listen 80;
+	index index.php index.html index.htm;
+
+	access_log /var/log/nginx/access.cfp.log;
+	error_log /var/log/nginx/error.cfp.log;
+
+	location / {
+		try_files $uri $uri/ /index.php?$query_string;
+	}
+
+	location ~ \.php$ {
+		try_files $uri =404;
+
+		fastcgi_param CFP_ENV production;
+		fastcgi_split_path_info ^(.+\.php)(/.+)$;
+		fastcgi_pass unix:/var/run/php5-fpm.sock;
+		fastcgi_read_timeout 150;
+		fastcgi_index index.php;
+		fastcgi_param  SCRIPT_FILENAME $document_root$fastcgi_script_name;
+		include fastcgi_params;
+	}
+
+}
+```
+
+The application does not currently work properly if you use PHP's built-in
+server.
+
 <a name="create-a-database" />
 ### Create a Database
 
@@ -134,19 +203,6 @@ your installation of OpenCFP:
  * Database name
  * Credentials to an account that can access the above database
 
-<a name="specify-environment" />
-### Specify Environment
-
-OpenCFP can be configured to run in multiple environments. The application environment (`CFP_ENV`) must be specified
-as an environment variable. If not specified, the default is `development`.
-
-An example Apache configuration is provided at `/web/htaccess.dist`. Copy this file to `/web/.htaccess` or otherwise
-configure your web server in the same way and change the `CFP_ENV` value to specify a different environment. The
-default has been pre-set for development.
-
-```
-SetEnv CFP_ENV production
-```
 
 <a name="configure-environment" />
 ### Configure Environment
@@ -169,6 +225,18 @@ to consider:
 | `secure_ssl`          | This should be enabled, if possible. Requires a valid SSL certificate. |
 | `database.*`          | This is the database information you collected above. |
 | `mail.*`              | This is SMTP configuration for sending mail. The application sends notifications on various system events. |
+
+For example, if you wanted to setup Mailgun as your email provider, your mail configuration would look something like this:
+
+```
+mail:
+    host: smtp.mailgun.org
+    port: 587
+    username: do-not-reply@cfp.myfancyconference.com
+    password: "a1b2c3d4"
+    encryption: tls
+    auth_mode: ~
+```
 
 <a name="run-migrations" />
 ### Run Migrations
@@ -531,6 +599,41 @@ if enabled. If you need to clear all application caches:
 $ bin/opencfp cache:clear
 ```
 
+<a name="scripts-rule-all" />
+### Scripts to Rule Them All
+
+OpenCFP follows the [Scripts to Rule Them All](https://github.com/github/scripts-to-rule-them-all) pattern. This allows
+for an easy to follow convention for common tasks when developing applications.
+
+#### Initial Setup
+This command will install all dependencies, run database migrations, and alert you of any missing configs.
+
+```
+$ script/setup
+```
+
+#### Update Application
+This command will update all dependencies and run new migrations
+
+```
+$ script/update
+```
+
+#### Start Development/Local Server
+This command will start a built-in php web server, using port `8000`.
+
+```
+$ script/server
+```
+
+#### Run Tests
+This command will run the PHPUnit test suite using distributed phpunit config, `phpunit.xml.dist`, if
+no phpunit.xml is found in the root.
+
+```
+$ script/test
+```
+
 <a name="testing" />
 ## Testing
 
@@ -539,37 +642,14 @@ your environment for testing:
 
 1. Create a testing database, and update the name and credentials in
    /config/testing.yml
-1. Copy the default `phinx.yml.dist` to `phinx.yml`
-1. Prepare the test database:
-
-```shell
-php ./vendor/bin/phinx --configuration=phinx.yml migrate -e testing
-```
-
-Once you are set up, the recommended way to run the tests is:
+2. Copy the default `phinx.yml.dist` to `phinx.yml`
+3. The recommended way to run the tests is:
 
 ```
-$ ./vendor/bin/phpunit
+$ script/test
 ```
 
 The default phpunit.xml.dist file is in the root directory for the project.
-
-
-<a name="developer-environment" />
-## Developer Environment
-
-<a name="php-built-in-web-server" />
-### PHP Built-in Web Server
-
-To run OpenCFP using [PHP's built-in web server](http://php.net/manual/en/features.commandline.webserver.php) the
-following command can be run:
-
-```
-$ php -S localhost:8000 -t web web/index_dev.php
-```
-
-You can choose a port other than `8000`. This is a quick way to get started doing development on OpenCFP itself.
-
 
 <a name="troubleshooting" />
 ## Troubleshooting

@@ -7,7 +7,7 @@ namespace OpenCFP\Http\Form;
  */
 class SignupForm extends Form
 {
-    protected $_fieldList = array(
+    protected $_fieldList = [
         'email',
         'password',
         'password2',
@@ -19,8 +19,8 @@ class SignupForm extends Form
         'speaker_bio',
         'transportation',
         'hotel',
-        'speaker_photo'
-    );
+        'speaker_photo',
+    ];
 
     /**
      * Validate all methods by calling all our validation methods
@@ -69,15 +69,22 @@ class SignupForm extends Form
 
     public function validateSpeakerPhoto()
     {
-        $allowedMimeTypes = array(
+        $allowedMimeTypes = [
             'image/jpeg',
             'image/jpg',
             'image/png',
-        );
+        ];
 
         // Speaker Photo is not required, only validate if it exists
         if (!isset($this->_taintedData['speaker_photo'])) {
             return true;
+        }
+
+        // Check if the file was uploaded OK, display any error that may have occurred
+        if (!$this->_taintedData['speaker_photo']->isValid()) {
+            $this->_addErrorMessage($this->_taintedData['speaker_photo']->getErrorMessage());
+
+            return false;
         }
 
         // Check if uploaded file is greater than 5MB
@@ -169,7 +176,7 @@ class SignupForm extends Form
         $first_name = filter_var(
             $this->_cleanData['first_name'],
             FILTER_SANITIZE_STRING,
-            array('flags' => FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_LOW)
+            ['flags' => FILTER_FLAG_STRIP_HIGH | FILTER_FLAG_STRIP_LOW]
         );
         $validation_response = true;
 

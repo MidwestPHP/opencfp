@@ -2,20 +2,32 @@
 
 namespace OpenCFP\Http\Controller\Admin;
 
+use Cartalyst\Sentry\Sentry;
 use OpenCFP\Http\Controller\BaseController;
-use Symfony\Component\HttpFoundation\Request;
 use Pagerfanta\View\TwitterBootstrap3View;
+use Spot\Locator;
+use Symfony\Component\HttpFoundation\Request;
 
 class ReviewController extends BaseController
 {
     use AdminAccessTrait;
 
-    private function indexAction(Request $req)
+    public function indexAction(Request $req)
     {
-        $user = $this->app['sentry']->getUser();
+        if (!$this->userHasAccess()) {
+            return $this->redirectTo('dashboard');
+        }
+
+        /* @var Sentry $sentry */
+        $sentry = $this->service('sentry');
+
+        $user = $sentry->getUser();
+
+        /* @var Locator $spot */
+        $spot = $this->service('spot');
 
         // Get list of talks where majority of admins 'favorited' them
-        $mapper = $this->app['spot']->mapper('OpenCFP\Domain\Entity\Talk');
+        $mapper = $spot->mapper(\OpenCFP\Domain\Entity\Talk::class);
         $options = [
             'order_by' => $req->get('order_by'),
             'sort' => $req->get('sort'),
@@ -45,7 +57,7 @@ class ReviewController extends BaseController
         $pagination = $view->render(
             $pagerfanta,
             $routeGenerator,
-            array('proximity' => 3)
+            ['proximity' => 3]
         );
 
         $template_data = [
@@ -55,7 +67,6 @@ class ReviewController extends BaseController
             'totalRecords' => count($talks),
             'per_page' => $per_page,
             'filter' => $req->get('filter'),
-            'per_page' => $per_page,
             'sort' => $req->get('sort'),
             'order_by' => $req->get('order_by'),
         ];

@@ -2,19 +2,36 @@
 
 namespace OpenCFP\Domain\Services;
 
+use Cartalyst\Sentry\Sentry;
 use Cartalyst\Sentry\Users\UserNotActivatedException;
 use Cartalyst\Sentry\Users\UserNotFoundException;
 
 class Login
 {
+    /**
+     * @var Sentry
+     */
     private $sentry;
+
+    /**
+     * @var string
+     */
     private $authenticationMessage = '';
 
+    /**
+     * @param Sentry $sentry
+     */
     public function __construct($sentry)
     {
         $this->sentry = $sentry;
     }
 
+    /**
+     * @param string $user
+     * @param string $password
+     *
+     * @return bool
+     */
     public function authenticate($user, $password)
     {
         if (empty($user) || empty($password)) {
@@ -25,10 +42,10 @@ class Login
 
         try {
             $this->sentry->authenticate(
-                array(
+                [
                     'email'=>$user,
                     'password'=>$password,
-                ),
+                ],
                 false
             );
         } catch (UserNotFoundException $e) {
@@ -44,9 +61,12 @@ class Login
         return true;
     }
 
+    /**
+     * @return array
+     */
     public function getViewVariables()
     {
-        $variables = array();
+        $variables = [];
         if (isset($_REQUEST['email']) && (isset($_REQUEST['passwd']))) {
             if (!$this->authenticate($_REQUEST['email'], $_REQUEST['passwd'])) {
                 $variables['errorMessage'] = $this->getAuthenticationMessage();
@@ -59,6 +79,9 @@ class Login
         return $variables;
     }
 
+    /**
+     * @return string
+     */
     public function getAuthenticationMessage()
     {
         return $this->authenticationMessage;

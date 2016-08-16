@@ -12,6 +12,7 @@ use OpenCFP\Http\API\ApiController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
+use Twig_Environment;
 
 class AuthorizationController extends ApiController
 {
@@ -53,8 +54,11 @@ class AuthorizationController extends ApiController
             // Grab currently authenticated user, if authenticated.
             $this->identityProvider->getCurrentUser();
 
+            /* @var Twig_Environment $twig */
+            $twig = $this->service('twig');
+
             // Show authorization interface
-            return $this->service('twig')->render('oauth/authorize.twig', ['authParams' => $authParams]);
+            return $twig->render('oauth/authorize.twig', ['authParams' => $authParams]);
         } catch (NotAuthenticatedException $e) {
             // Authenticate user and come back here.
             $this->service('session')->set('redirectTo', $request->getUri());
@@ -63,7 +67,7 @@ class AuthorizationController extends ApiController
         } catch (OAuthException $e) {
             return $this->setStatusCode($e->httpStatusCode)->respond([
                 'error' => $e->errorType,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], $e->getHttpHeaders());
         }
     }
@@ -87,7 +91,7 @@ class AuthorizationController extends ApiController
 
             $redirectUri = RedirectUri::make($authParams['redirect_uri'], [
                 'error' => $error->errorType,
-                'message' => $error->getMessage()
+                'message' => $error->getMessage(),
             ]);
 
             return $this->setStatusCode(Response::HTTP_FOUND)->respond('', ['Location' => $redirectUri]);
@@ -110,7 +114,7 @@ class AuthorizationController extends ApiController
         } catch (\Exception $e) {
             return $this->setStatusCode($e->httpStatusCode)->respond([
                 'error' => $e->errorType,
-                'message' => $e->getMessage()
+                'message' => $e->getMessage(),
             ], $e->getHttpHeaders());
         }
     }

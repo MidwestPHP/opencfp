@@ -3,12 +3,16 @@ application:
   url: http://localhost
   email: contact@openconf.com
   eventurl: http://localhost
+  event_location: Miami, FL
   enddate: Oct. 14th, 2016
   show_submission_count: false
   airport: MIA
   arrival: 2014-10-26
   departure: 2014-10-31
   secure_ssl: false
+  online_conference: false
+  date_format: m-d-Y
+
 
 api:
   enabled: true
@@ -18,10 +22,13 @@ cache:
 
 database:
   host: 127.0.0.1
-  database: cfp_travis
-  dsn: mysql:dbname=cfp_travis;host=127.0.0.1
+  database: cfp_test
+  dsn: mysql:dbname=cfp_test;host=127.0.0.1
   user: root
-  password: ""
+  password:
+
+log:
+  level: debug
 
 mail:
   host: ~

@@ -8,20 +8,16 @@ use OpenCFP\Console\BaseCommand;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Style\SymfonyStyle;
 
 class AdminDemoteCommand extends BaseCommand
 {
-    /**
-     * Configure the command options.
-     *
-     * @return void
-     */
     protected function configure()
     {
         $this
             ->setName('admin:demote')
             ->setDefinition([
-                new InputArgument('email', InputArgument::REQUIRED, 'Email address of user to demote')
+                new InputArgument('email', InputArgument::REQUIRED, 'Email address of user to demote'),
             ])
             ->setDescription('Demote an existing user from being an admin')
             ->setHelp(<<<EOF
@@ -33,39 +29,51 @@ EOF
 );
     }
 
-    /**
-     * Execute the command.
-     *
-     * @param  \Symfony\Component\Console\Input\InputInterface   $input
-     * @param  \Symfony\Component\Console\Output\OutputInterface $output
-     * @return void
-     */
     public function execute(InputInterface $input, OutputInterface $output)
     {
-        /** @var Sentry $sentry */
+        /* @var Sentry $sentry */
         $sentry = $this->app['sentry'];
+
         $email = $input->getArgument('email');
 
-        $output->writeln(sprintf('Retrieving account from <info>%s</info>...', $email));
+        $io = new SymfonyStyle(
+            $input,
+            $output
+        );
+
+        $io->title('OpenCFP');
+
+        $io->section(sprintf(
+            'Demoting account with email %s from Admin',
+            $email
+        ));
 
         try {
             $user = $sentry->getUserProvider()->findByLogin($email);
-            $output->writeln('  Found account...');
-
-            if (! $user->hasAccess('admin')) {
-                $output->writeln(sprintf('The account <info>%s</info> is not in the Admin group', $email));
-                exit(1);
-            }
-
-            $adminGroup = $sentry->getGroupProvider()->findByName('Admin');
-            $user->removeGroup($adminGroup);
-            $output->writeln(sprintf('  Removed <info>%s</info> from the Admin group', $email));
         } catch (UserNotFoundException $e) {
-            $output->writeln(sprintf('<error>Error:</error> Could not find user by %s', $email));
-            exit(1);
+            $io->error(sprintf(
+                'Could not find account with email %s.',
+                $email
+            ));
+
+            return 1;
         }
 
-        $output->writeln('Done!');
-        exit(0);
+        if (! $user->hasAccess('admin')) {
+            $io->error(sprintf(
+                'Account with email %s is not in the Admin group.',
+                $email
+            ));
+
+            return 1;
+        }
+
+        $adminGroup = $sentry->getGroupProvider()->findByName('Admin');
+        $user->removeGroup($adminGroup);
+
+        $io->success(sprintf(
+            'Removed account with email %s from the Admin group',
+            $email
+        ));
     }
 }

@@ -19,14 +19,14 @@ class DashboardController extends BaseController
          *
          * @var Speakers $speakers
          */
-        $speakers = $this->app['application.speakers'];
+        $speakers = $this->service('application.speakers');
 
         try {
             $profile = $speakers->findProfile();
 
             return $this->render('dashboard.twig', [
                 'profile' => $profile,
-                'cfp_open' => $this->isCfpOpen()
+                'cfp_open' => $this->isCfpOpen(),
             ]);
         } catch (NotAuthenticatedException $e) {
             return $this->redirectTo('login');

@@ -2,11 +2,11 @@
 
 namespace OpenCFP\Http\Controller;
 
+use Cartalyst\Sentry\Sentry;
 use Cartalyst\Sentry\Users\UserNotFoundException;
-use OpenCFP\Http\Form\ResetForm;
-use OpenCFP\Application;
-use Symfony\Component\HttpFoundation\Request;
 use OpenCFP\Http\Form\ForgotForm;
+use OpenCFP\Http\Form\ResetForm;
+use Symfony\Component\HttpFoundation\Request;
 
 class ForgotController extends BaseController
 {
@@ -14,27 +14,27 @@ class ForgotController extends BaseController
 
     public function indexAction()
     {
-        $form = $this->app['form.factory']->create(new ForgotForm());
+        $form = $this->service('form.factory')->create(new ForgotForm());
 
-        $data = array(
+        $data = [
             'form' => $form->createView(),
-            'current_page' => "Forgot Password"
-        );
+            'current_page' => "Forgot Password",
+        ];
 
         return $this->render('user/forgot_password.twig', $data);
     }
 
     public function sendResetAction(Request $req)
     {
-        $form = $this->app['form.factory']->create(new ForgotForm());
+        $form = $this->service('form.factory')->create(new ForgotForm());
         $form->bind($req);
 
         if (!$form->isValid()) {
-            $this->app['session']->set('flash', array(
+            $this->service('session')->set('flash', [
                 'type' => 'error',
                 'short' => 'Error',
-                'ext' => "Please enter a properly formatted email address"
-            ));
+                'ext' => "Please enter a properly formatted email address",
+            ]);
 
             return $this->redirectTo('forgot_password');
         }
@@ -43,27 +43,30 @@ class ForgotController extends BaseController
         $data = $form->getData();
 
         try {
-            $user = $this->app['sentry']->getUserProvider()->findByLogin($data['email']);
+            /* @var Sentry $sentry */
+            $sentry = $this->service('sentry');
+
+            $user = $sentry->getUserProvider()->findByLogin($data['email']);
         } catch (UserNotFoundException $e) {
-            $this->app['session']->set('flash', $this->successfulSendFlashParameters($data['email']));
+            $this->service('session')->set('flash', $this->successfulSendFlashParameters($data['email']));
 
             return $this->redirectTo('forgot_password');
         }
 
         // Create a reset code and email the URL to our user
-        $response = $this->app['reset_emailer']->send($user->getId(), $data['email'], $user->getResetPasswordCode());
+        $response = $this->service('reset_emailer')->send($user->getId(), $data['email'], $user->getResetPasswordCode());
 
         if ($response == false) {
-            $this->app['session']->set('flash', array(
+            $this->service('session')->set('flash', [
                 'type' => 'error',
                 'short' => 'Error',
-                'ext' => "We were unable to send your password reset request. Please try again"
-            ));
+                'ext' => "We were unable to send your password reset request. Please try again",
+            ]);
 
             return $this->redirectTo('forgot_password');
         }
 
-        $this->app['session']->set('flash', $this->successfulSendFlashParameters($data['email']));
+        $this->service('session')->set('flash', $this->successfulSendFlashParameters($data['email']));
 
         return $this->redirectTo('login');
     }
@@ -73,7 +76,10 @@ class ForgotController extends BaseController
         $errorMessage = "The reset you have requested appears to be invalid, please try again.";
         $error = 0;
         try {
-            $user = $this->app['sentry']->getUserProvider()->findById($req->get('user_id'));
+            /* @var Sentry $sentry */
+            $sentry = $this->service('sentry');
+
+            $user = $sentry->getUserProvider()->findById($req->get('user_id'));
 
             if (!$user->checkResetPasswordCode($req->get('reset_code'))) {
                 $error++;
@@ -83,22 +89,22 @@ class ForgotController extends BaseController
         }
 
         if ($error > 0) {
-            $this->app['session']->set('flash', array(
+            $this->service('session')->set('flash', [
                 'type' => 'error',
                 'short' => 'Error',
                 'ext' => $errorMessage,
-            ));
+            ]);
         }
 
         // Build password form and display it to the user
-        $form_options = array(
+        $form_options = [
             'user_id' => $req->get('user_id'),
-            'reset_code' => $req->get('reset_code')
-        );
-        $form = $this->app['form.factory']->create(new ResetForm(), $form_options);
+            'reset_code' => $req->get('reset_code'),
+        ];
+        $form = $this->service('form.factory')->create(new ResetForm(), $form_options);
 
         $data['form'] = $form->createView();
-        $data['flash'] = $this->getFlash($app);
+        $data['flash'] = $this->getFlash($this->app);
 
         return $this->render('user/forgot_password.twig', $data);
     }
@@ -107,11 +113,11 @@ class ForgotController extends BaseController
     {
         $user_id = $req->get('user_id');
         $reset_code = $req->get('reset_code');
-        $form_options = array(
+        $form_options = [
             'user_id' => $user_id,
-            'reset_code' => $reset_code
-        );
-        $form = $this->app['form.factory']->create(new ResetForm(), $form_options);
+            'reset_code' => $reset_code,
+        ];
+        $form = $this->service('form.factory')->create(new ResetForm(), $form_options);
 
         if (! $form->isValid()) {
             return $this->render('user/reset_password.twig', ['form' => $form->createView()]);
@@ -121,7 +127,10 @@ class ForgotController extends BaseController
         $error = 0;
 
         try {
-            $user = $this->app['sentry']->getUserProvider()->findById($req->get('user_id'));
+            /* @var Sentry $sentry */
+            $sentry = $this->service('sentry');
+
+            $user = $sentry->getUserProvider()->findById($req->get('user_id'));
         } catch (UserNotFoundException $e) {
             $error++;
         }
@@ -131,11 +140,11 @@ class ForgotController extends BaseController
         }
 
         if ($error > 0) {
-            $this->app['session']->set('flash', array(
+            $this->service('session')->set('flash', [
                 'type' => 'error',
                 'short' => 'Error',
                 'ext' => $errorMessage,
-            ));
+            ]);
         }
 
         return $this->redirectTo('forgot_password');
@@ -150,7 +159,10 @@ class ForgotController extends BaseController
         $password = $postArray['reset']['password']['password'];
 
         try {
-            $user = $this->app['sentry']->getUserProvider()->findById($user_id);
+            /* @var Sentry $sentry */
+            $sentry = $this->service('sentry');
+
+            $user = $sentry->getUserProvider()->findById($user_id);
         } catch (UserNotFoundException $e) {
             echo $e;
             die();
@@ -161,7 +173,7 @@ class ForgotController extends BaseController
          * already
          */
         if ($user->checkPassword($password) === true) {
-            $this->app['session']->set('flash', [
+            $this->service('session')->set('flash', [
                 'type' => 'error',
                 'short' => 'Error',
                 'ext' => "Please select a different password than your current one.",
@@ -172,7 +184,7 @@ class ForgotController extends BaseController
 
         // Everything looks good, let's actually reset their password
         if ($user->attemptResetPassword($reset_code, $password)) {
-            $this->app['session']->set('flash', [
+            $this->service('session')->set('flash', [
                 'type' => 'success',
                 'short' => 'Success',
                 'ext' => "You've successfully reset your password.",
@@ -182,7 +194,7 @@ class ForgotController extends BaseController
         }
 
         // user may have tried using the recovery twice
-        $this->app['session']->set('flash', [
+        $this->service('session')->set('flash', [
             'type' => 'error',
             'short' => 'Error',
             'ext' => "Password reset failed, please contact the administrator.",
@@ -193,10 +205,10 @@ class ForgotController extends BaseController
 
     protected function successfulSendFlashParameters($email)
     {
-        return array(
+        return [
             'type' => 'success',
             'short' => 'Success',
-            'ext' => "If your email was valid, we sent a link to reset your password to $email"
-        );
+            'ext' => "If your email was valid, we sent a link to reset your password to $email",
+        ];
     }
 }

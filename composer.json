@@ -1,7 +1,8 @@
 {
     "name": "opencfp/opencfp",
+    "license": "MIT",
     "require": {
-        "php": ">=5.4",
+        "php": ">=5.5",
         "twig/twig": "1.*",
         "pagerfanta/pagerfanta": "1.0.*@dev",
         "cartalyst/sentry": "2.1.*",
@@ -33,20 +34,26 @@
         "igorw/config-service-provider": "~1.2",
         "symfony/yaml": "~2.5",
         "league/oauth2-server": "^4.1",
-        "ircmaxell/random-lib": "^1.1"
+        "ircmaxell/random-lib": "^1.1",
+        "monolog/monolog": "^1.17"
     },
     "autoload": {
-        "psr-4": {"OpenCFP\\": "classes/"}
+        "psr-4": {
+            "OpenCFP\\": "classes/"
+        }
     },
     "autoload-dev": {
+        "classmap": [
+            "tests/DatabaseTestCase.php"
+        ],
         "psr-4": {
-            "OpenCFP\\": "tests/OpenCFP/"
+            "OpenCFP\\Test\\": "tests/"
         }
     },
     "require-dev": {
-        "codeclimate/php-test-reporter": "dev-master",
+        "codeclimate/php-test-reporter": "0.2.0",
         "fabpot/php-cs-fixer": "^1.10",
-        "fzaninotto/faker": "1.2.*",
+        "fzaninotto/faker": "^1.5.0",
         "johnkary/phpunit-speedtrap": "~1.0@dev",
         "mockery/mockery": "1.0.*@dev",
         "phpunit/dbunit": "1.3.2",

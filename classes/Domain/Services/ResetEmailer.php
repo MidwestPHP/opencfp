@@ -4,11 +4,32 @@ namespace OpenCFP\Domain\Services;
 
 class ResetEmailer
 {
+    /**
+     * @var \Swift_Mailer
+     */
     private $swift_mailer;
+
+    /**
+     * @var \Twig_Template
+     */
     private $template;
+
+    /**
+     * @var string
+     */
     private $config_email;
+
+    /**
+     * @var string
+     */
     private $config_title;
 
+    /**
+     * @param \Swift_Mailer $swiftMailer
+     * @param \Twig_Template $template
+     * @param string $configEmail
+     * @param string $configTitle
+     */
     public function __construct(\Swift_Mailer $swiftMailer, \Twig_Template $template, $configEmail, $configTitle)
     {
         $this->swift_mailer = $swiftMailer;
@@ -17,6 +38,12 @@ class ResetEmailer
         $this->config_title = $configTitle;
     }
 
+    /**
+     * @param string $userId
+     * @param string $email
+     * @param string $resetCode
+     * @return int
+     */
     public function send($userId, $email, $resetCode)
     {
         $parameters = $this->parameters($userId, $resetCode);
@@ -30,19 +57,29 @@ class ResetEmailer
         }
     }
 
+    /**
+     * @param string $userId
+     * @param string $resetCode
+     * @return array
+     */
     private function parameters($userId, $resetCode)
     {
-        return array(
+        return [
             'reset_code' => $resetCode,
             'method' => (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] != 'off')
                 ? 'https' : 'http',
             'host' => !empty($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost',
             'user_id' => $userId,
             'email' => $this->config_email,
-            'title' => $this->config_title
-        );
+            'title' => $this->config_title,
+        ];
     }
 
+    /**
+     * @param string $email
+     * @param array $parameters
+     * @return \Swift_Message
+     */
     private function preparedMessage($email, $parameters)
     {
         $message = new \Swift_Message();

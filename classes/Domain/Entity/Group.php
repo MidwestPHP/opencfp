@@ -15,14 +15,14 @@ class Group extends Entity
             'name' => ['type' => 'string', 'length' => 255, 'required' => true],
             'permissions' => ['type' => 'text'],
             'created_at' => ['type' => 'datetime', 'value' => new \DateTime()],
-            'updated_at' => ['type' => 'datetime', 'value' => new \DateTime()]
+            'updated_at' => ['type' => 'datetime', 'value' => new \DateTime()],
         ];
     }
 
     public static function relations(\Spot\MapperInterface $mapper, \Spot\EntityInterface $entity)
     {
         return [
-            'users' => $mapper->hasManyThrough($entity, 'OpenCFP\Domain\Entity\User', 'OpenCFP\Domain\Entity\UserGroup', 'user_id', 'group_id'),
+            'users' => $mapper->hasManyThrough($entity, \OpenCFP\Domain\Entity\User::class, \OpenCFP\Domain\Entity\UserGroup::class, 'user_id', 'group_id'),
         ];
     }
 }

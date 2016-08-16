@@ -6,6 +6,7 @@ use OpenCFP\ContainerAware;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Twig_Environment;
 
 abstract class BaseController
 {
@@ -19,9 +20,9 @@ abstract class BaseController
      *
      * @return string the generated URL
      */
-    public function url($route, $parameters = array())
+    public function url($route, $parameters = [])
     {
-        return $this->app['url_generator']->generate($route, $parameters, UrlGeneratorInterface::ABSOLUTE_URL);
+        return $this->service('url_generator')->generate($route, $parameters, UrlGeneratorInterface::ABSOLUTE_URL);
     }
 
     /**
@@ -35,7 +36,10 @@ abstract class BaseController
      */
     public function render($name, array $context = [], $status = Response::HTTP_OK)
     {
-        return new Response($this->app['twig']->render($name, $context), $status);
+        /* @var Twig_Environment $twig */
+        $twig = $this->service('twig');
+
+        return new Response($twig->render($name, $context), $status);
     }
 
     /**

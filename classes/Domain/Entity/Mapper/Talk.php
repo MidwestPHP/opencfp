@@ -23,29 +23,36 @@ class Talk extends Mapper
      * user has favourited this talk
      *
      * @param integer $admin_user_id
-     * @param string $order_by
-     * @param string $sort Sort Direction
-     * @throws InvalidArgumentException If order by is not in white list
-     * @return array
+     * @param array $options
+     * @return array If order by is not in white list
+     * @internal param string $order_by
+     * @internal param string $sort Sort Direction
      */
-    public function getAllPagerFormatted($admin_user_id, $options = [])
+    public function getAllPagerFormatted($admin_user_id, $options, $userData = true, $where = null)
     {
         // Merge options with default options
         $options = $this->getSortOptions(
             $options,
             [
                 'order_by' => 'created_at',
-                'sort' => 'DESC',
+                'sort' => 'ASC',
             ]
         );
 
-        $talks = $this->all()
-            ->order([$options['order_by'] => $options['sort']])
-            ->with(['favorites', 'comments']);
-        $formatted = array();
+        $formatted = [];
+
+        if ($where) {
+            $talks = $this->all()
+                ->order([$options['order_by'] => $options['sort']])
+                ->where($where);
+        } else {
+            $talks = $this->all()
+                ->order([$options['order_by'] => $options['sort']])
+                ->with(['favorites']);
+        }
 
         foreach ($talks as $talk) {
-            $formatted[] = $this->createdFormattedOutput($talk, $admin_user_id);
+            $formatted[] = $this->createdFormattedOutput($talk, $admin_user_id, $userData);
         }
 
         return $formatted;
@@ -85,8 +92,9 @@ class Talk extends Mapper
      * Return an array of recent talks
      *
      * @param  integer $admin_user_id
-     * @param  integer $limt
+     * @param int $limit
      * @return array
+     * @internal param int $limt
      */
     public function getRecent($admin_user_id, $limit = 10)
     {
@@ -162,7 +170,7 @@ class Talk extends Mapper
         }
 
         $talks = $this->query(
-            "SELECT t.*, SUM(m.rating) AS total_rating FROM talks t "
+            "SELECT t.*, SUM(m.rating) AS total_rating, COUNT(m.rating) as review_count FROM talks t "
             . "LEFT JOIN talk_meta m ON t.id = m.talk_id "
             . "WHERE rating > 0 "
             . "GROUP BY m.`talk_id` "
@@ -322,8 +330,8 @@ class Talk extends Mapper
      * @param mixed $value Column value
      * @param integer $admin_user_id
      * @param array $options Ordery By and Sorting Options
-     * @throws If column is not in the column white list
-     * @return array
+     * @return array column is not in the column white list
+     * @throws InvalidArgumentException
      */
     public function getTalksFilteredBy($column, $value, $admin_user_id, $options = [])
     {
@@ -378,7 +386,7 @@ class Talk extends Mapper
      * @param  integer $admin_user_id
      * @return array
      */
-    public function createdFormattedOutput($talk, $admin_user_id)
+    public function createdFormattedOutput($talk, $admin_user_id, $userData = true)
     {
         if ($talk->favorites) {
             foreach ($talk->favorites as $favorite) {
@@ -388,7 +396,7 @@ class Talk extends Mapper
             }
         }
 
-        $mapper = $this->getMapper('OpenCFP\Domain\Entity\TalkMeta');
+        $mapper = $this->getMapper(\OpenCFP\Domain\Entity\TalkMeta::class);
         $talk_meta = $mapper->where(['talk_id' => $talk->id, 'admin_user_id' => $admin_user_id])
             ->first();
 
@@ -401,14 +409,39 @@ class Talk extends Mapper
             'selected' => $talk->selected,
             'favorite' => $talk->favorite,
             'meta' => ($talk_meta) ? $talk_meta : $mapper->get(),
+            'description' => $talk->description,
+            'slides' => $talk->slides,
+            'other' => $talk->other,
+            'level' => $talk->level,
+            'desired' => $talk->desired,
+            'sponsor' => $talk->sponsor,
         ];
 
-        if ($talk->speaker) {
+        if ($talk->speaker && $userData) {
             $output['user'] = [
                 'id' => $talk->speaker->id,
                 'first_name' => $talk->speaker->first_name,
-                'last_name' => $talk->speaker->last_name
+                'last_name' => $talk->speaker->last_name,
             ];
+
+            $output += [
+                'speaker_id' => $talk->speaker->id,
+                'speaker_first_name' => $talk->speaker->first_name,
+                'speaker_last_name' => $talk->speaker->last_name,
+                'speaker_email' => $talk->speaker->email,
+                'speaker_company' => $talk->speaker->company,
+                'speaker_twitter' => $talk->speaker->twitter,
+                'speaker_airport' => $talk->speaker->airport,
+                'speaker_hotel' => $talk->speaker->hotel,
+                'speaker_transportation' => $talk->speaker->transportation,
+                'speaker_info' => $talk->speaker->info,
+                'speaker_bio' => $talk->speaker->bio,
+            ];
+        }
+
+        if ($talk->total_rating) {
+            $output['total_rating'] = $talk->total_rating;
+            $output['review_count'] = $talk->review_count;
         }
 
         return $output;

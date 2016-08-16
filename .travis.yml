@@ -2,23 +2,28 @@ language: php
 
 sudo: false
 
-php:
-  - 5.6
-  - 5.5
+matrix:
+  fast_finish: true
+  include:
+    - php: 7.0
+      env: WITH_COVERAGE=true
+    - php: 5.6
+      env: WITH_CS=true
+    - php: 5.5
 
 env:
-  - TRAVIS_DB=cfp_travis
+  global:
+    - TRAVIS_DB=cfp_test
+    - CODECLIMATE_REPO_TOKEN=9deb249b01a414d979959cfd05a4c351b19a5959858653b20276454d4189edc3
 
 # cache composer downloads so installing is quicker
 cache:
   directories:
     - $HOME/.composer/cache
 
-addons:
-  code_climate:
-    repo_token: 9deb249b01a414d979959cfd05a4c351b19a5959858653b20276454d4189edc3
-
 before_install:
+  - if [[ "$TRAVIS_PULL_REQUEST" == "false" && "$TRAVIS_BRANCH" == "master" ]]; then COLLECT_COVERAGE=true; else COLLECT_COVERAGE=false; fi
+  - if [[ "$COLLECT_COVERAGE" == "false" ]]; then phpenv config-rm xdebug.ini; fi
   - composer self-update
   - composer validate --no-check-publish
 
@@ -28,12 +33,12 @@ install:
 before_script:
   - sh tools/travis/setup-mail.sh
   - mysql -e "CREATE DATABASE $TRAVIS_DB" -uroot
-  - vendor/bin/phinx --configuration=phinx.yml.dist migrate -e testing
+  - cp phinx.yml.dist phinx.yml
+  - vendor/bin/phinx migrate -e testing
 
 script:
-  - vendor/bin/phpunit --coverage-clover build/logs/clover.xml
-  - vendor/bin/php-cs-fixer fix --verbose
+  - if [[ "$COLLECT_COVERAGE" == "true" ]]; then vendor/bin/phpunit --coverage-clover build/logs/clover.xml; else vendor/bin/phpunit; fi
+  - if [[ "$WITH_CS" == "true" ]]; then vendor/bin/php-cs-fixer fix --verbose --diff; fi
 
-after_script:
-  - vendor/bin/test-reporter --stdout > codeclimate.json
-  - "curl -X POST -d @codeclimate.json -H 'Content-Type: application/json' -H 'User-Agent: Code Climate (PHP Test Reporter v0.1.1)' https://codeclimate.com/test_reports"
+after_success:
+  - if [[ "$COLLECT_COVERAGE" == "true" ]]; then vendor/bin/test-reporter --coverage-report build/logs/clover.xml; fi

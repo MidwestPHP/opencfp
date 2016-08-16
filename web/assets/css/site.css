@@ -276,6 +276,11 @@ a:hover {
   font-size: 75%;
 }
 
+.comment-list__author {
+  color: #999;
+  font-weight: bold;
+}
+
 .comment-photo {
   position: absolute;
   top: 0;
@@ -424,6 +429,13 @@ a:hover {
 }
 .nav-sidebar > li > a:hover {
   background: #71738b;
+}
+
+.nav-sidebar > li li {
+  list-style: none;
+}
+.nav-sidebar > li li > a {
+  color: #bbb;
 }
 
 .nav-icon {
